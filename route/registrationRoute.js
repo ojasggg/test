@@ -7,6 +7,8 @@ const auth = require("../middleware/auth");
 const upload = require("../middleware/fileupload");
 
 const router = new express.Router();
+
+// User Register
 router.post('/user/register', function(req,res){
     const firstname = req.body.firstname;
     const lastname = req.body.lastname;
@@ -36,7 +38,7 @@ router.post('/user/register', function(req,res){
 
 
 
-// Login System 
+// User Login 
 router.post('/user/login',function(req,res){
     const username = req.body.username ; 
     const password = req.body.password ;
@@ -49,7 +51,7 @@ router.post('/user/login',function(req,res){
         }
         bcrypt.compare(password , userData.password,function(err, result){
             if(result==false){
-.
+                
                 return res.status(400).json({message : "Invalid Login credentials!!"}) 
             }
         
@@ -63,34 +65,18 @@ router.post('/user/login',function(req,res){
 
 })
 
-router.put('/user/update',function(req,res){
-    const id = req.body.id;
-    const profilePic = req.body.profilePic ;
-    Users.updateOne({_id : id},{userProfile : profilePic })
-    .then(function(){
-        res.status(201).json({message : "Updated Successfully!!!"})
-    })
-
-    .catch(function(){
-        res.status(500).json({message : "Error occured."})
-    })  
-
-})
-
-router.post('/profile/upload', upload.single('myimage'),function(req,res){
+// Uploading Profile picture after registration
+router.put('/user/profile/upload',auth.verifyUser, upload.single('myimage'),function(req,res){
 
     console.log(req.file)
+    const id = userData._id
     const fileName = req.file.filename
 
     if(req.file==undefined){
         res.status(400).json({message : "Only png images are allowed."})
     }
 
-    const data = new Users({
-        userProfile : fileName
-    })
-
-    data.save()
+    Users.updateOne({_id : id},{profilePic : fileName })
     .then(function(){
         res.status(201).json({message : "Profile pic Inserted."})
     })
@@ -100,6 +86,19 @@ router.post('/profile/upload', upload.single('myimage'),function(req,res){
     })
 
 })
+
+router.get('/user',auth.verifyUser,function(req,res){
+    product.find(userData._id)
+    .then(function(data){
+        res.status(201).json(data);
+    })
+
+    .catch(function(err){
+        res.status(500).json({message : err});
+    })
+
+})
+
 
 
 module.exports = router ; 
